@@ -1,4 +1,4 @@
-use crate::cli::cli_config::WorkspaceConfig;
+use pixi_core::cli::cli_config::WorkspaceConfig;
 use clap::Parser;
 
 pub mod channel;

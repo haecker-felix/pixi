@@ -1,24 +1,22 @@
 use clap::Parser;
 use clap::builder::styling::{AnsiColor, Color, Style};
 use indicatif::ProgressDrawTarget;
-use miette::{Diagnostic, IntoDiagnostic};
+use miette::IntoDiagnostic;
 use pixi_consts::consts;
+use pixi_core::cli::LockFileUsageError;
 use pixi_progress::global_multi_progress;
 
 use std::{env, io::IsTerminal};
-use thiserror::Error;
 use tracing::level_filters::LevelFilter;
 
 pub mod add;
 mod build;
 pub mod clean;
-pub mod cli_config;
 pub mod command_info;
 pub mod completion;
 pub mod config;
 pub mod exec;
 pub mod global;
-pub mod has_specs;
 pub mod import;
 pub mod info;
 pub mod init;
@@ -170,12 +168,6 @@ pub enum Command {
     External(Vec<String>),
 }
 
-#[derive(Debug, Error, Diagnostic)]
-pub enum LockFileUsageError {
-    #[error("the argument '--locked' cannot be used together with '--frozen'")]
-    FrozenAndLocked,
-}
-
 #[derive(Debug, Default, Copy, Clone)]
 /// Lock file usage from the CLI with automatic validation
 pub struct LockFileUsageArgs {
@@ -243,7 +235,7 @@ impl clap::Args for LockFileUsageArgs {
     }
 }
 
-impl From<LockFileUsageArgs> for crate::environment::LockFileUsage {
+impl From<LockFileUsageArgs> for pixi_core::environment::LockFileUsage {
     fn from(value: LockFileUsageArgs) -> Self {
         if value.frozen() {
             Self::Frozen
@@ -252,44 +244,6 @@ impl From<LockFileUsageArgs> for crate::environment::LockFileUsage {
         } else {
             Self::Update
         }
-    }
-}
-
-impl TryFrom<LockFileUsageConfig> for crate::environment::LockFileUsage {
-    type Error = LockFileUsageError;
-
-    fn try_from(value: LockFileUsageConfig) -> Result<Self, LockFileUsageError> {
-        value.validate()?;
-        if value.frozen {
-            Ok(Self::Frozen)
-        } else if value.locked {
-            Ok(Self::Locked)
-        } else {
-            Ok(Self::Update)
-        }
-    }
-}
-
-/// Configuration for lock file usage, used by LockFileUpdateConfig
-#[derive(Parser, Debug, Default, Clone)]
-pub struct LockFileUsageConfig {
-    /// Install the environment as defined in the lockfile, doesn't update
-    /// lockfile if it isn't up-to-date with the manifest file.
-    #[clap(long, env = "PIXI_FROZEN", help_heading = consts::CLAP_UPDATE_OPTIONS)]
-    pub frozen: bool,
-    /// Check if lockfile is up-to-date before installing the environment,
-    /// aborts when lockfile isn't up-to-date with the manifest file.
-    #[clap(long, env = "PIXI_LOCKED", help_heading = consts::CLAP_UPDATE_OPTIONS)]
-    pub locked: bool,
-}
-
-impl LockFileUsageConfig {
-    /// Validate that the configuration is valid
-    pub fn validate(&self) -> Result<(), LockFileUsageError> {
-        if self.frozen && self.locked {
-            return Err(LockFileUsageError::FrozenAndLocked);
-        }
-        Ok(())
     }
 }
 
@@ -491,6 +445,7 @@ pub fn get_styles() -> clap::builder::Styles {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pixi_core::cli::LockFileUsageConfig;
     use temp_env;
 
     #[test]

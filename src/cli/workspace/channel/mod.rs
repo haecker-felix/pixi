@@ -2,7 +2,7 @@ pub mod add;
 pub mod list;
 pub mod remove;
 
-use crate::cli::cli_config::{LockFileUpdateConfig, PrefixUpdateConfig, WorkspaceConfig};
+use pixi_core::cli::cli_config::{LockFileUpdateConfig, PrefixUpdateConfig, WorkspaceConfig};
 use clap::Parser;
 use miette::IntoDiagnostic;
 use pixi_config::ConfigCli;

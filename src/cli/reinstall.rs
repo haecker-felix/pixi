@@ -1,11 +1,11 @@
-use crate::cli::cli_config::WorkspaceConfig;
-use crate::environment::get_update_lock_file_and_prefix;
-use crate::lock_file::{ReinstallPackages, UpdateMode};
-use crate::{UpdateLockFileOptions, WorkspaceLocator};
 use clap::Parser;
 use fancy_display::FancyDisplay;
 use itertools::Itertools;
 use pixi_config::ConfigCli;
+use pixi_core::cli::cli_config::WorkspaceConfig;
+use pixi_core::environment::get_update_lock_file_and_prefix;
+use pixi_core::lock_file::{ReinstallPackages, UpdateMode};
+use pixi_core::{UpdateLockFileOptions, WorkspaceLocator};
 
 /// Re-install an environment, both updating the lockfile and re-installing the environment.
 ///
@@ -29,7 +29,7 @@ pub struct Args {
     pub project_config: WorkspaceConfig,
 
     #[clap(flatten)]
-    pub lock_file_usage: super::LockFileUsageConfig,
+    pub lock_file_usage: pixi_core::cli::LockFileUsageConfig,
 
     /// The environment to install.
     #[arg(long, short)]

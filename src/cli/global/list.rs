@@ -1,7 +1,7 @@
-use crate::global::list::{
+use pixi_core::global::list::{
     GlobalSortBy, list_all_global_environments, list_specific_global_environment,
 };
-use crate::global::{EnvironmentName, Project};
+use pixi_core::global::{EnvironmentName, Project};
 use clap::Parser;
 use fancy_display::FancyDisplay;
 use pixi_config::{Config, ConfigCli};

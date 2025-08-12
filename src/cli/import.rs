@@ -15,8 +15,8 @@ use uv_requirements_txt::RequirementsTxt;
 use miette::{Diagnostic, IntoDiagnostic, Result};
 use thiserror::Error;
 
-use super::cli_config::LockFileUpdateConfig;
-use crate::{
+use pixi_core::cli::cli_config::LockFileUpdateConfig;
+use pixi_core::{
     WorkspaceLocator,
     cli::cli_config::{PrefixUpdateConfig, WorkspaceConfig},
     environment::sanity_check_workspace,

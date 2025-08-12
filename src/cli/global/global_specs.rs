@@ -6,8 +6,8 @@ use pixi_consts::consts;
 use typed_path::Utf8TypedPathBuf;
 use url::Url;
 
-use crate::cli::has_specs::HasSpecs;
-use crate::global::project::{FromMatchSpecError, GlobalSpec};
+use pixi_core::cli::has_specs::HasSpecs;
+use pixi_core::global::project::{FromMatchSpecError, GlobalSpec};
 use pixi_spec::PixiSpec;
 use rattler_conda_types::{ChannelConfig, MatchSpec, ParseMatchSpecError, ParseStrictness};
 
@@ -23,7 +23,7 @@ pub struct GlobalSpecs {
 
     /// The git revisions
     #[clap(flatten)]
-    pub rev: Option<crate::cli::cli_config::GitRev>,
+    pub rev: Option<pixi_core::cli::cli_config::GitRev>,
 
     /// The subdirectory within the git repository
     #[clap(long, requires = "git", help_heading = consts::CLAP_GIT_OPTIONS)]
@@ -127,10 +127,19 @@ impl GlobalSpecs {
 
 #[cfg(test)]
 mod tests {
+    use pixi_core::global::project::GlobalSpec;
     use std::path::PathBuf;
 
     use super::*;
     use rattler_conda_types::ChannelConfig;
+
+    #[cfg(test)]
+    pub fn spec(global_spec: &GlobalSpec) -> &PixiSpec {
+        match global_spec {
+            GlobalSpec::Nameless(spec) => spec,
+            GlobalSpec::Named(named_spec) => &named_spec.spec,
+        }
+    }
 
     #[test]
     fn test_to_global_specs_named() {
@@ -169,7 +178,7 @@ mod tests {
 
         assert_eq!(global_specs.len(), 1);
         assert!(matches!(
-            global_specs.first().unwrap().spec(),
+            spec(global_specs.first().unwrap()),
             &PixiSpec::Git(..)
         ))
     }

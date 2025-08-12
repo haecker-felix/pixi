@@ -1,8 +1,8 @@
 pub mod get;
 pub mod set;
 
-use crate::WorkspaceLocator;
-use crate::cli::cli_config::WorkspaceConfig;
+use pixi_core::WorkspaceLocator;
+use pixi_core::cli::cli_config::WorkspaceConfig;
 use clap::Parser;
 
 /// Commands to manage workspace name.

@@ -1,9 +1,7 @@
 use std::path::PathBuf;
 
-use pixi::{
-    cli::{cli_config::WorkspaceConfig, run::Args},
-    task::TaskName,
-};
+use pixi::cli::run::Args;
+use pixi_core::{cli::cli_config::WorkspaceConfig, task::TaskName};
 use pixi_manifest::{
     FeatureName, Task,
     task::{CmdArgs, TemplateString},

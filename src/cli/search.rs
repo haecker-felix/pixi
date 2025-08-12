@@ -21,8 +21,10 @@ use strsim::jaro;
 use tracing::{debug, error};
 use url::Url;
 
-use super::cli_config::ChannelsConfig;
-use crate::{WorkspaceLocator, cli::cli_config::WorkspaceConfig, workspace::WorkspaceLocatorError};
+use pixi_core::cli::cli_config::ChannelsConfig;
+use pixi_core::{
+    WorkspaceLocator, cli::cli_config::WorkspaceConfig, workspace::WorkspaceLocatorError,
+};
 
 /// Search a conda package
 ///

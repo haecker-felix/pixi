@@ -8,24 +8,24 @@ use rattler_shell::{
     shell::{CmdExe, PowerShell, Shell, ShellEnum, ShellScript},
 };
 
-use crate::lock_file::UpdateMode;
-use crate::workspace::get_activated_environment_variables;
-use crate::{
+use pixi_config::{ConfigCli, ConfigCliActivation, ConfigCliPrompt};
+use pixi_core::lock_file::UpdateMode;
+use pixi_core::workspace::get_activated_environment_variables;
+use pixi_core::{
     UpdateLockFileOptions, WorkspaceLocator, activation::CurrentEnvVarBehavior,
     environment::get_update_lock_file_and_prefix, prompt,
 };
-use crate::{
+use pixi_core::{
     cli::cli_config::{PrefixUpdateConfig, WorkspaceConfig},
     lock_file::ReinstallPackages,
 };
-use pixi_config::{ConfigCli, ConfigCliActivation, ConfigCliPrompt};
 #[cfg(target_family = "unix")]
 use pixi_pty::unix::PtySession;
 
 #[cfg(target_family = "unix")]
-use crate::prefix::Prefix;
+use pixi_core::prefix::Prefix;
 
-use super::cli_config::LockFileUpdateConfig;
+use pixi_core::cli::cli_config::LockFileUpdateConfig;
 
 /// Start a shell in a pixi environment, run `exit` to leave the shell.
 #[derive(Parser, Debug)]

@@ -4,7 +4,7 @@ use itertools::Itertools;
 use pixi_config::ConfigCli;
 use std::fmt::Write;
 
-use crate::{
+use pixi_core::{
     UpdateLockFileOptions, WorkspaceLocator,
     cli::cli_config::WorkspaceConfig,
     environment::get_update_lock_file_and_prefixes,
@@ -36,7 +36,7 @@ pub struct Args {
     pub project_config: WorkspaceConfig,
 
     #[clap(flatten)]
-    pub lock_file_usage: super::LockFileUsageConfig,
+    pub lock_file_usage: pixi_core::cli::LockFileUsageConfig,
 
     /// The environment to install
     #[arg(long, short)]

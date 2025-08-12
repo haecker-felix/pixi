@@ -1,10 +1,10 @@
 use std::{cmp::Ordering, collections::HashSet};
 
-use crate::{
+use pixi_core::{
     Workspace,
     lock_file::{UpdateContext, filter_lock_file},
 };
-use crate::{
+use pixi_core::{
     WorkspaceLocator,
     cli::cli_config::WorkspaceConfig,
     diff::{LockFileDiff, LockFileJsonDiff},

@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{
+use pixi_core::{
     WorkspaceLocator,
     cli::cli_config::{LockFileUpdateConfig, WorkspaceConfig},
     lock_file::UpdateLockFileOptions,

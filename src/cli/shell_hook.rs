@@ -11,7 +11,7 @@ use rattler_shell::{
 use serde::Serialize;
 use serde_json;
 
-use crate::{
+use pixi_core::{
     UpdateLockFileOptions, Workspace, WorkspaceLocator,
     activation::{CurrentEnvVarBehavior, get_activator},
     cli::cli_config::{PrefixUpdateConfig, WorkspaceConfig},
@@ -21,7 +21,7 @@ use crate::{
     workspace::{Environment, HasWorkspaceRef, get_activated_environment_variables},
 };
 
-use super::cli_config::LockFileUpdateConfig;
+use pixi_core::cli::cli_config::LockFileUpdateConfig;
 
 /// Print the pixi environment activation script.
 ///

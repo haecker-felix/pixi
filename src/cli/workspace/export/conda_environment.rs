@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{WorkspaceLocator, cli::cli_config::WorkspaceConfig, workspace::Environment};
+use pixi_core::{WorkspaceLocator, cli::cli_config::WorkspaceConfig, workspace::Environment};
 use clap::Parser;
 use itertools::Itertools;
 use miette::{Context, IntoDiagnostic};
@@ -244,7 +244,7 @@ pub async fn execute(args: Args) -> miette::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Workspace;
+    use pixi_core::Workspace;
     use std::path::Path;
 
     #[test]

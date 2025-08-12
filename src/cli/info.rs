@@ -1,6 +1,6 @@
 use std::{fmt::Display, path::PathBuf};
 
-use crate::cli::cli_config::WorkspaceConfig;
+use pixi_core::cli::cli_config::WorkspaceConfig;
 use chrono::{DateTime, Local};
 use clap::Parser;
 use itertools::Itertools;
@@ -18,7 +18,7 @@ use serde_with::{DisplayFromStr, serde_as};
 use tokio::task::spawn_blocking;
 use toml_edit::ser::to_string;
 
-use crate::{
+use pixi_core::{
     WorkspaceLocator, global,
     global::{BinDir, EnvRoot},
     task::TaskName,
