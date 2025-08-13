@@ -23,7 +23,7 @@ use pixi_core::{
 use pixi_pty::unix::PtySession;
 
 #[cfg(target_family = "unix")]
-use pixi_core::prefix::Prefix;
+use pixi_utils::prefix::Prefix;
 
 use pixi_core::cli::cli_config::LockFileUpdateConfig;
 
