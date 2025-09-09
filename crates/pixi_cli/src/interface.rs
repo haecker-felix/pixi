@@ -18,10 +18,7 @@ impl Interface for CliInterface {
     }
 
     fn message(&self, msg: &str) {
-        eprintln!(
-            "{}{msg}",
-            console::style(console::Emoji("⚠️ ", "")).yellow(),
-        );
+        eprintln!("{msg}",);
     }
 
     fn success(&self, msg: &str) {
