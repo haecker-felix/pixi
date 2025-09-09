@@ -161,7 +161,7 @@ pub enum Command {
     #[clap(visible_alias = "g")]
     Global(global::Args),
     Info(info::Args),
-    Init(init::Args),
+    Init(pixi_api::init::InitOptions),
     Import(import::Args),
     #[clap(visible_alias = "i")]
     Install(install::Args),

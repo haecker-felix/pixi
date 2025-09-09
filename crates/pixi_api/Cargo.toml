@@ -10,4 +10,17 @@ version = "0.1.0"
 
 [dependencies]
 clap = { workspace = true, features = ["derive"] }
+fs-err = { workspace = true }
+miette = { workspace = true }
+minijinja = { workspace = true }
+pixi_config = { workspace = true }
+pixi_consts = { workspace = true }
+pixi_core = { workspace = true }
+pixi_manifest = { workspace = true }
+pixi_utils = { workspace = true }
 rattler_conda_types = { workspace = true }
+same-file = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+tokio = { workspace = true, features = ["fs"] }
+url = { workspace = true }
+uv-normalize = { workspace = true }

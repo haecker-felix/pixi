@@ -16,13 +16,13 @@ use std::{
 use builders::{LockBuilder, SearchBuilder};
 use indicatif::ProgressDrawTarget;
 use miette::{Context, Diagnostic, IntoDiagnostic};
+use pixi_api::init::GitAttributes;
 use pixi_cli::LockFileUsageConfig;
 use pixi_cli::cli_config::{
     ChannelsConfig, LockFileUpdateConfig, NoInstallConfig, WorkspaceConfig,
 };
 use pixi_cli::{
     add,
-    init::{self, GitAttributes},
     install::Args,
     lock, remove, run, search,
     task::{self, AddArgs, AliasArgs},
@@ -321,7 +321,7 @@ impl PixiControl {
     pub fn init(&self) -> InitBuilder {
         InitBuilder {
             no_fast_prefix: false,
-            args: init::Args {
+            args: pixi_api::init::InitOptions {
                 path: self.workspace_path().to_path_buf(),
                 channels: None,
                 platforms: Vec::new(),
@@ -339,7 +339,7 @@ impl PixiControl {
     pub fn init_with_platforms(&self, platforms: Vec<String>) -> InitBuilder {
         InitBuilder {
             no_fast_prefix: false,
-            args: init::Args {
+            args: pixi_api::init::InitOptions {
                 path: self.workspace_path().to_path_buf(),
                 channels: None,
                 platforms,

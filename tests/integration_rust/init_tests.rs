@@ -80,7 +80,7 @@ async fn init_from_existing_pyproject_toml() {
 
     // Init a new project
     pixi.init()
-        .with_format(pixi_cli::init::ManifestFormat::Pyproject)
+        .with_format(pixi_api::init::ManifestFormat::Pyproject)
         .await
         .unwrap();
 

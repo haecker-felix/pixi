@@ -1,15 +1,14 @@
 use std::{
-    cmp::PartialEq,
     collections::HashMap,
     fs,
     io::{ErrorKind, Write},
-    path::{Path, PathBuf},
+    path::Path,
     str::FromStr,
 };
 
-use clap::{Parser, ValueEnum};
 use miette::{Context, IntoDiagnostic};
 use minijinja::{Environment, context};
+use pixi_api::init::{GitAttributes, InitOptions, ManifestFormat};
 use pixi_config::{Config, get_default_author, pixi_home};
 use pixi_consts::consts;
 use pixi_manifest::{FeatureName, pyproject::PyProjectManifest};
@@ -21,58 +20,6 @@ use url::Url;
 use uv_normalize::PackageName;
 
 use pixi_core::workspace::WorkspaceMut;
-
-#[derive(Parser, Debug, Clone, PartialEq, ValueEnum)]
-pub enum ManifestFormat {
-    Pixi,
-    Pyproject,
-    Mojoproject,
-}
-
-/// Creates a new workspace
-///
-/// This command is used to create a new workspace.
-/// It prepares a manifest and some helpers for the user to start working.
-///
-/// As pixi can both work with `pixi.toml` and `pyproject.toml` files, the user can choose which one to use with `--format`.
-///
-/// You can import an existing conda environment file with the `--import` flag.
-#[derive(Parser, Debug)]
-pub struct Args {
-    /// Where to place the workspace (defaults to current path)
-    #[arg(default_value = ".")]
-    pub path: PathBuf,
-
-    /// Channel to use in the workspace.
-    #[arg(
-        short,
-        long = "channel",
-        value_name = "CHANNEL",
-        conflicts_with = "ENVIRONMENT_FILE"
-    )]
-    pub channels: Option<Vec<NamedChannelOrUrl>>,
-
-    /// Platforms that the workspace supports.
-    #[arg(short, long = "platform", id = "PLATFORM")]
-    pub platforms: Vec<String>,
-
-    /// Environment.yml file to bootstrap the workspace.
-    #[arg(short = 'i', long = "import", id = "ENVIRONMENT_FILE")]
-    pub env_file: Option<PathBuf>,
-
-    /// The manifest format to create.
-    #[arg(long, conflicts_with_all = ["ENVIRONMENT_FILE", "pyproject_toml"], ignore_case = true)]
-    pub format: Option<ManifestFormat>,
-
-    /// Create a pyproject.toml manifest instead of a pixi.toml manifest
-    // BREAK (0.27.0): Remove this option from the cli in favor of the `format` option.
-    #[arg(long, conflicts_with_all = ["ENVIRONMENT_FILE", "format"], alias = "pyproject", hide = true)]
-    pub pyproject_toml: bool,
-
-    /// Source Control Management used for this workspace
-    #[arg(short = 's', long = "scm", ignore_case = true)]
-    pub scm: Option<GitAttributes>,
-}
 
 /// The pixi.toml template
 ///
@@ -229,30 +176,6 @@ const GITIGNORE_TEMPLATE: &str = r#"
 !.pixi/config.toml
 "#;
 
-#[derive(Parser, Debug, Clone, PartialEq, ValueEnum)]
-pub enum GitAttributes {
-    Github,
-    Gitlab,
-    Codeberg,
-}
-
-impl GitAttributes {
-    fn template(&self) -> &'static str {
-        match self {
-            GitAttributes::Github | GitAttributes::Codeberg => {
-                r#"# SCM syntax highlighting & preventing 3-way merges
-pixi.lock merge=binary linguist-language=YAML linguist-generated=true
-"#
-            }
-            GitAttributes::Gitlab => {
-                r#"# GitLab syntax highlighting & preventing 3-way merges
-pixi.lock merge=binary gitlab-language=yaml gitlab-generated=true
-"#
-            }
-        }
-    }
-}
-
 fn is_init_dir_equal_to_pixi_home_parent(init_dir: &Path) -> bool {
     pixi_home()
         .as_ref()
@@ -261,7 +184,7 @@ fn is_init_dir_equal_to_pixi_home_parent(init_dir: &Path) -> bool {
         .unwrap_or(false)
 }
 
-pub async fn execute(args: Args) -> miette::Result<()> {
+pub async fn execute(args: InitOptions) -> miette::Result<()> {
     let env = Environment::new();
     // Fail silently if the directory already exists or cannot be created.
     fs_err::create_dir_all(&args.path).ok();
@@ -656,6 +579,7 @@ fn create_or_append_file(path: &Path, template: &str) -> std::io::Result<()> {
 mod tests {
     use std::{io::Read, path::Path};
 
+    use clap::Parser;
     use tempfile::tempdir;
 
     use super::*;
@@ -705,7 +629,7 @@ mod tests {
         ];
 
         for (input, expected) in test_cases {
-            let args = Args::try_parse_from(["init", "--format", input]).unwrap();
+            let args = InitOptions::try_parse_from(["init", "--format", input]).unwrap();
             assert_eq!(args.format, Some(expected));
         }
     }
@@ -726,7 +650,7 @@ mod tests {
         ];
 
         for (input, expected) in test_cases {
-            let args = Args::try_parse_from(["init", "--scm", input]).unwrap();
+            let args = InitOptions::try_parse_from(["init", "--scm", input]).unwrap();
             assert_eq!(args.scm, Some(expected));
         }
     }
@@ -736,7 +660,7 @@ mod tests {
         let invalid_values = vec!["invalid", "", "git", "bitbucket", "mercurial", "svn"];
 
         for value in invalid_values {
-            let result = Args::try_parse_from(["init", "--scm", value]);
+            let result = InitOptions::try_parse_from(["init", "--scm", value]);
             assert!(
                 result.is_err(),
                 "Expected error for invalid SCM value '{}', but got success",

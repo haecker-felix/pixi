@@ -52,7 +52,7 @@ pub fn string_from_iter(iter: impl IntoIterator<Item = impl AsRef<str>>) -> Vec<
 /// Contains the arguments to pass to [`init::execute()`]. Call `.await` to call
 /// the CLI execute method and await the result at the same time.
 pub struct InitBuilder {
-    pub args: init::Args,
+    pub args: pixi_api::init::InitOptions,
     pub no_fast_prefix: bool,
 }
 
@@ -83,7 +83,7 @@ impl InitBuilder {
     }
 
     /// Instruct init which manifest format to use
-    pub fn with_format(mut self, format: init::ManifestFormat) -> Self {
+    pub fn with_format(mut self, format: pixi_api::init::ManifestFormat) -> Self {
         self.args.format = Some(format);
         self
     }
@@ -94,7 +94,7 @@ impl IntoFuture for InitBuilder {
     type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + 'static>>;
 
     fn into_future(self) -> Self::IntoFuture {
-        init::execute(init::Args {
+        init::execute(pixi_api::init::InitOptions {
             channels: if !self.no_fast_prefix {
                 self.args.channels.or_else(|| {
                     Some(vec![
