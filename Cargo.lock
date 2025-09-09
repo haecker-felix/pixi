@@ -4741,6 +4741,10 @@ name = "pixi_api"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "console 0.15.11",
+ "console-subscriber",
+ "dialoguer",
+ "dunce",
  "fs-err",
  "miette 7.6.0",
  "minijinja",
@@ -4752,7 +4756,9 @@ dependencies = [
  "rattler_conda_types",
  "same-file",
  "serde",
+ "tempfile",
  "tokio",
+ "tracing",
  "url",
  "uv-normalize",
 ]

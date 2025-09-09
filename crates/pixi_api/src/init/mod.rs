@@ -1,3 +1,6 @@
+mod options;
+pub use options::{GitAttributes, InitOptions, ManifestFormat};
+
 use std::{
     collections::HashMap,
     fs,
@@ -8,7 +11,6 @@ use std::{
 
 use miette::{Context, IntoDiagnostic};
 use minijinja::{Environment, context};
-use pixi_api::init::{GitAttributes, InitOptions, ManifestFormat};
 use pixi_config::{Config, get_default_author, pixi_home};
 use pixi_consts::consts;
 use pixi_manifest::{FeatureName, pyproject::PyProjectManifest};
@@ -20,6 +22,8 @@ use url::Url;
 use uv_normalize::PackageName;
 
 use pixi_core::workspace::WorkspaceMut;
+
+use crate::interface::Interface;
 
 /// The pixi.toml template
 ///
@@ -184,11 +188,11 @@ fn is_init_dir_equal_to_pixi_home_parent(init_dir: &Path) -> bool {
         .unwrap_or(false)
 }
 
-pub async fn execute(args: InitOptions) -> miette::Result<()> {
+pub(crate) async fn init<I: Interface>(interface: &I, options: InitOptions) -> miette::Result<()> {
     let env = Environment::new();
     // Fail silently if the directory already exists or cannot be created.
-    fs_err::create_dir_all(&args.path).ok();
-    let dir = args.path.canonicalize().into_diagnostic()?;
+    fs_err::create_dir_all(&options.path).ok();
+    let dir = options.path.canonicalize().into_diagnostic()?;
     let pixi_manifest_path = dir.join(consts::WORKSPACE_MANIFEST);
     let pyproject_manifest_path = dir.join(consts::PYPROJECT_MANIFEST);
     let mojoproject_manifest_path = dir.join(consts::MOJOPROJECT_MANIFEST);
@@ -197,11 +201,16 @@ pub async fn execute(args: InitOptions) -> miette::Result<()> {
     let config = Config::load_global();
 
     if is_init_dir_equal_to_pixi_home_parent(&dir) {
-        let help_msg = format!(
-            "Please follow the getting started guide at https://pixi.sh/v{}/init_getting_started/ or run the following command to create a new workspace in a subdirectory:\n\n  {}\n",
-            consts::PIXI_VERSION,
-            console::style("pixi init my_workspace").bold(),
-        );
+        let help_msg = if interface.is_cli() {
+            format!(
+                "Please follow the getting started guide at https://pixi.sh/v{}/init_getting_started/ or run the following command to create a new workspace in a subdirectory:\n\n  {}\n",
+                consts::PIXI_VERSION,
+                console::style("pixi init my_workspace").bold(),
+            )
+        } else {
+            "You have to select a subdirectory to create a new workspace".to_string()
+        };
+
         miette::bail!(
             help = help_msg,
             "initialization without a name in the parent directory of your PIXI_HOME is not allowed.",
@@ -209,27 +218,26 @@ pub async fn execute(args: InitOptions) -> miette::Result<()> {
     }
 
     // Deprecation warning for the `pyproject` option
-    if args.pyproject_toml {
-        eprintln!(
-            "{}The '{}' option is deprecated and will be removed in the future.\nUse '{}' instead.",
-            console::style(console::Emoji("⚠️ ", "")).yellow(),
+    if options.pyproject_toml {
+        interface.warning(&format!(
+            "The '{}' option is deprecated and will be removed in the future.\nUse '{}' instead.",
             console::style("--pyproject").bold().red(),
             console::style("--format pyproject").bold().green(),
-        );
+        ));
     }
 
     let default_name = get_name_from_dir(&dir).unwrap_or_else(|_| String::from("new_workspace"));
     let version = "0.1.0";
     let author = get_default_author();
-    let platforms = if args.platforms.is_empty() {
+    let platforms = if options.platforms.is_empty() {
         vec![Platform::current().to_string()]
     } else {
-        args.platforms.clone()
+        options.platforms.clone()
     };
 
     // Create a 'pixi.toml' manifest and populate it by importing a conda
     // environment file
-    if let Some(env_file_path) = args.env_file {
+    if let Some(env_file_path) = options.env_file {
         // Check if the 'pixi.toml' file doesn't already exist. We don't want to
         // overwrite it.
         if pixi_manifest_path.is_file() {
@@ -268,15 +276,14 @@ pub async fn execute(args: InitOptions) -> miette::Result<()> {
         )?;
         let workspace = workspace.save().await.into_diagnostic()?;
 
-        eprintln!(
-            "{}Created {}",
-            console::style(console::Emoji("✔ ", "")).green(),
+        interface.success(&format!(
+            "Created {}",
             // Canonicalize the path to make it more readable, but if it fails just use the path as
             // is.
             workspace.workspace.provenance.path.display()
-        );
+        ));
     } else {
-        let channels = if let Some(channels) = args.channels {
+        let channels = if let Some(channels) = options.channels {
             channels
         } else {
             config.default_channels().to_vec()
@@ -288,26 +295,21 @@ pub async fn execute(args: InitOptions) -> miette::Result<()> {
         // Dialog with user to create a 'pyproject.toml' or 'pixi.toml' manifest
         // If nothing is defined but there is a `pyproject.toml` file, ask the user.
         let pyproject = if !pixi_manifest_path.is_file()
-            && args.format.is_none()
-            && !args.pyproject_toml
+            && options.format.is_none()
+            && !options.pyproject_toml
             && pyproject_manifest_path.is_file()
         {
-            eprintln!(
+            interface.message(&format!(
                 "\nA '{}' file already exists.\n",
                 console::style(consts::PYPROJECT_MANIFEST).bold()
-            );
+            ));
 
-            dialoguer::Confirm::new()
-                .with_prompt(format!(
-                    "Do you want to extend it with the '{}' configuration?",
-                    console::style("[tool.pixi]").bold().green()
-                ))
-                .default(false)
-                .show_default(true)
-                .interact()
-                .into_diagnostic()?
+            interface.confirm(&format!(
+                "Do you want to extend it with the '{}' configuration?",
+                console::style("[tool.pixi]").bold().green()
+            ))?
         } else {
-            args.format == Some(ManifestFormat::Pyproject) || args.pyproject_toml
+            options.format == Some(ManifestFormat::Pyproject) || options.pyproject_toml
         };
 
         // Inject a tool.pixi.workspace section into an existing pyproject.toml file if
@@ -317,10 +319,10 @@ pub async fn execute(args: InitOptions) -> miette::Result<()> {
 
             // Early exit if 'pyproject.toml' already contains a '[tool.pixi.workspace]' table
             if pyproject.has_pixi_table() {
-                eprintln!(
+                interface.message(&format!(
                     "{}Nothing to do here: 'pyproject.toml' already contains a '[tool.pixi.workspace]' section.",
                     console::style(console::Emoji("🤔 ", "")).blue(),
-                );
+                ));
                 return Ok(());
             }
 
@@ -357,21 +359,19 @@ pub async fn execute(args: InitOptions) -> miette::Result<()> {
             } else {
                 // Inform about the addition of the package itself as an editable dependency of
                 // the workspace
-                eprintln!(
-                    "{}Added package '{}' as an editable dependency.",
-                    console::style(console::Emoji("✔ ", "")).green(),
+                interface.success(&format!(
+                    "Added package '{}' as an editable dependency.",
                     name
-                );
+                ));
                 // Inform about the addition of environments from optional dependencies
                 // or dependency groups (if any)
                 if !environments.is_empty() {
                     let envs: Vec<&str> = environments.keys().map(AsRef::as_ref).collect();
-                    eprintln!(
-                        "{}Added environment{} '{}' from optional dependencies or dependency groups.",
-                        console::style(console::Emoji("✔ ", "")).green(),
+                    interface.success(&format!(
+                        "Added environment{} '{}' from optional dependencies or dependency groups.",
                         if envs.len() > 1 { "s" } else { "" },
                         envs.join("', '")
-                    )
+                    ));
                 }
             }
 
@@ -399,7 +399,7 @@ pub async fn execute(args: InitOptions) -> miette::Result<()> {
                     },
                 )
                 .expect("should be able to render the template");
-            save_manifest_file(&pyproject_manifest_path, rv)?;
+            save_manifest_file(interface, &pyproject_manifest_path, rv)?;
 
             let src_dir = dir.join("src").join(pypi_package_name);
             tokio::fs::create_dir_all(&src_dir)
@@ -427,7 +427,7 @@ pub async fn execute(args: InitOptions) -> miette::Result<()> {
 
         // Create a 'pixi.toml' manifest
         } else {
-            let path = if args.format == Some(ManifestFormat::Mojoproject) {
+            let path = if options.format == Some(ManifestFormat::Mojoproject) {
                 mojoproject_manifest_path
             } else {
                 pixi_manifest_path
@@ -451,7 +451,7 @@ pub async fn execute(args: InitOptions) -> miette::Result<()> {
                 config.s3_options,
                 None,
             );
-            save_manifest_file(&path, rv)?;
+            save_manifest_file(interface, &path, rv)?;
         };
     }
 
@@ -464,7 +464,7 @@ pub async fn execute(args: InitOptions) -> miette::Result<()> {
         );
     }
 
-    let git_attributes = args.scm.unwrap_or(GitAttributes::Github);
+    let git_attributes = options.scm.unwrap_or(GitAttributes::Github);
 
     // create a .gitattributes if one is missing
     if let Err(e) = create_or_append_file(&gitattributes_path, git_attributes.template()) {
@@ -536,16 +536,19 @@ fn relevant_s3_options(
 }
 
 /// Save the rendered template to a file, and print a message to the user.
-fn save_manifest_file(path: &Path, content: String) -> miette::Result<()> {
+fn save_manifest_file<I: Interface>(
+    interface: &I,
+    path: &Path,
+    content: String,
+) -> miette::Result<()> {
     fs_err::write(path, content).into_diagnostic()?;
-    eprintln!(
-        "{}Created {}",
-        console::style(console::Emoji("✔ ", "")).green(),
+    interface.success(&format!(
+        "Created {}",
         // Canonicalize the path to make it more readable, but if it fails just use the path as is.
         dunce::canonicalize(path)
             .unwrap_or(path.to_path_buf())
             .display()
-    );
+    ));
     Ok(())
 }
 
@@ -629,8 +632,8 @@ mod tests {
         ];
 
         for (input, expected) in test_cases {
-            let args = InitOptions::try_parse_from(["init", "--format", input]).unwrap();
-            assert_eq!(args.format, Some(expected));
+            let options = InitOptions::try_parse_from(["init", "--format", input]).unwrap();
+            assert_eq!(options.format, Some(expected));
         }
     }
 
@@ -650,8 +653,8 @@ mod tests {
         ];
 
         for (input, expected) in test_cases {
-            let args = InitOptions::try_parse_from(["init", "--scm", input]).unwrap();
-            assert_eq!(args.scm, Some(expected));
+            let options = InitOptions::try_parse_from(["init", "--scm", input]).unwrap();
+            assert_eq!(options.scm, Some(expected));
         }
     }
 

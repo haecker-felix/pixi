@@ -12,6 +12,7 @@ use clap::builder::styling::{AnsiColor, Color, Style};
 use clap::{CommandFactory, Parser};
 use indicatif::ProgressDrawTarget;
 use miette::IntoDiagnostic;
+use pixi_api::context::ApiContext;
 use pixi_consts::consts;
 use pixi_core::environment::LockFileUsage;
 use pixi_progress::global_multi_progress;
@@ -31,8 +32,8 @@ pub mod global;
 pub mod has_specs;
 pub mod import;
 pub mod info;
-pub mod init;
 pub mod install;
+pub mod interface;
 pub mod list;
 pub mod lock;
 pub mod reinstall;
@@ -331,10 +332,12 @@ pub async fn execute_command(
     command: Command,
     global_options: &GlobalOptions,
 ) -> miette::Result<()> {
+    let api = ApiContext::new(interface::CliInterface {});
+
     match command {
         Command::Completion(cmd) => completion::execute(cmd),
         Command::Config(cmd) => config::execute(cmd).await,
-        Command::Init(cmd) => init::execute(cmd).await,
+        Command::Init(cmd) => api.init(cmd).await,
         Command::Add(cmd) => add::execute(cmd).await,
         Command::Clean(cmd) => clean::execute(cmd).await,
         Command::Run(cmd) => run::execute(cmd).await,

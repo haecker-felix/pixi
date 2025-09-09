@@ -28,7 +28,7 @@ use pixi_cli::{
     cli_config::{
         DependencyConfig, GitRev, LockFileUpdateConfig, NoInstallConfig, WorkspaceConfig,
     },
-    init, install, lock, remove, search, task, update, workspace,
+    install, lock, remove, search, task, update, workspace,
 };
 use pixi_core::DependencyType;
 use std::{
@@ -94,7 +94,8 @@ impl IntoFuture for InitBuilder {
     type IntoFuture = Pin<Box<dyn Future<Output = Self::Output> + 'static>>;
 
     fn into_future(self) -> Self::IntoFuture {
-        init::execute(pixi_api::init::InitOptions {
+        /* TODO
+        pixi_api::init::init(pixi_api::init::InitOptions {
             channels: if !self.no_fast_prefix {
                 self.args.channels.or_else(|| {
                     Some(vec![
@@ -107,6 +108,13 @@ impl IntoFuture for InitBuilder {
             ..self.args
         })
         .boxed_local()
+         */
+        // TODO: Implement init functionality
+        Box::pin(async move {
+            Err(miette::miette!(
+                "InitBuilder functionality is not yet implemented"
+            ))
+        })
     }
 }
 /// A trait used by builders to access NoInstallConfig
