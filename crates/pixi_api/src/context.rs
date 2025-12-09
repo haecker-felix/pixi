@@ -14,8 +14,7 @@ use rattler_conda_types::{Channel, MatchSpec, PackageName, Platform, RepoDataRec
 
 use crate::interface::Interface;
 use crate::workspace::add::GitOptions;
-use crate::workspace::{DependencyOptions, InitOptions, ReinstallOptions};
-use crate::workspace::{InitOptions, Package, ReinstallOptions};
+use crate::workspace::{DependencyOptions, InitOptions, Package, ReinstallOptions};
 
 pub struct DefaultContext<I: Interface> {
     _interface: I,
